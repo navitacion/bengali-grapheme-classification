@@ -1,11 +1,16 @@
-import copy
+import copy, time, gc, datetime
+import numpy as np
 import pandas as pd
+
+from tqdm import tqdm
 
 import torch
 from torch import nn
 
+from utils.logger import create_logger, get_logger
 
-def train_model(net, dataloader_dict, weights_dict, optimizer, device, num_epoch):
+
+def train_model(net, dataloader_dict, weights_dict, optimizer, device, num_epoch, model_name, version):
     print('Bengali Training...')
     since = time.time()
     best_model_wts = copy.deepcopy(net.state_dict())
@@ -57,7 +62,9 @@ def train_model(net, dataloader_dict, weights_dict, optimizer, device, num_epoch
 
             epoch_loss = epoch_loss / len(dataloader_dict[phase].dataset)
 
-            print(f'Epoch {epoch + 1}/{num_epoch} {phase} Loss: {epoch_loss}')
+            get_logger(version).info(
+                f'Epoch {epoch + 1}/{num_epoch} {phase} Loss: {epoch_loss}'
+            )
 
             # Save Epoch Loss
             if phase == 'train':
@@ -69,11 +76,7 @@ def train_model(net, dataloader_dict, weights_dict, optimizer, device, num_epoch
             if phase == 'val' and epoch_loss < best_loss:
                 best_loss = epoch_loss
                 best_model_wts = copy.deepcopy(net.state_dict())
-
-        df_loss = pd.DataFrame({
-            'Train_loss': train_loss_list,
-            'Val_loss': val_loss_list
-        })
+                torch.save(net.state_dict(), "../model/temp_{}.pth".format(model_name))
 
     time_elapsed = time.time() - since
     print('Training complete in {}'.format(str(datetime.timedelta(seconds=time_elapsed))))
@@ -87,4 +90,5 @@ def train_model(net, dataloader_dict, weights_dict, optimizer, device, num_epoch
 
     # load best model weights
     net.load_state_dict(best_model_wts)
+    torch.save(net.state_dict(), "../model/{}_loss{:.3f}.pth".format(model_name, best_loss))
     return net, best_loss, df_loss
