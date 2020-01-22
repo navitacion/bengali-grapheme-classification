@@ -1,6 +1,5 @@
 from torch import nn
-import torch
-from torchsummary import summary
+
 
 class MyNet(nn.Module):
 
