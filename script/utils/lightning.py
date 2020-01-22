@@ -5,10 +5,10 @@ import pytorch_lightning as pl
 from pytorch_lightning import Trainer
 
 
-class CoolSystem(pl.LightningModule):
+class LightningSystem(pl.LightningModule):
 
     def __init__(self, net, dataloader_dict, weights_dict, optimizer, device):
-        super(CoolSystem, self).__init__()
+        super(LightningSystem, self).__init__()
 
         self.net = net
         self.dataloader_dict = dataloader_dict
@@ -53,8 +53,7 @@ class CoolSystem(pl.LightningModule):
         return {'avg_val_loss': avg_loss, 'log': logs}
 
     def configure_optimizers(self):
-        return [self.optimizer]
-
+        return [self.optimizer], []
 
     @pl.data_loader
     def train_dataloader(self):

@@ -21,7 +21,7 @@ class BengariDataset(Dataset):
         if self.transform is not None:
             _img = self.transform(_img, self.phase)
 
-        if self.phase == 'train':
+        if self.phase == 'train' or self.phase == 'val':
             target_g = self.meta[self.meta['image_id'] == _id]['grapheme_root'].values[0]
             target_v = self.meta[self.meta['image_id'] == _id]['vowel_diacritic'].values[0]
             target_c = self.meta[self.meta['image_id'] == _id]['consonant_diacritic'].values[0]
