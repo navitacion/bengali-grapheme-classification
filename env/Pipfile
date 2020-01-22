@@ -21,6 +21,7 @@ pyarrow = "*"
 pillow = "==6.2.1"
 pytorch-lightning = "*"
 tensorboard = "*"
+torchsummary = "*"
 
 [requires]
 python_version = "3.7"
