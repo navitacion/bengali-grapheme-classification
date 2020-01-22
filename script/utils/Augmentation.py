@@ -111,6 +111,16 @@ class RandomRotate:
         return image
 
 
+class Gray2RGB:
+    def __init__(self):
+        pass
+
+    def __call__(self, image):
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+
+        return image
+
+
 class PostProcess:
     def __init__(self):
         pass
@@ -130,6 +140,7 @@ class ImageTransform:
                 CropResize(resize),
                 RandomFlip(),
                 RandomRotate(),
+                Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()
             ]),
@@ -137,6 +148,7 @@ class ImageTransform:
                 Reverse(),
                 MedianFilter(),
                 CropResize(resize),
+                Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()
             ]),
@@ -144,6 +156,7 @@ class ImageTransform:
                 Reverse(),
                 MedianFilter(),
                 CropResize(resize),
+                Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()
             ]),

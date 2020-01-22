@@ -6,7 +6,7 @@ class MyNet(nn.Module):
     def __init__(self):
         super(MyNet, self).__init__()
 
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=64, kernel_size=5, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=5, stride=2, padding=1)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu1 = nn.ReLU(inplace=True)
 
