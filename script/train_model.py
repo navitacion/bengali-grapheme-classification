@@ -13,9 +13,11 @@ from utils.Augmentation import ImageTransform
 from utils.Trainer import train_model
 from utils.logger import create_logger, get_logger
 from utils.lightning import LightningSystem
+from models.EfficientNet import Mymodel
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
+from efficientnet_pytorch import EfficientNet
 
 
 # Config  ################################################################
@@ -75,7 +77,7 @@ dataloader_dict = {
 }
 
 # Model  ################################################################
-net = MyNet()
+net = Mymodel()
 optimizer = optim.Adam(params=net.parameters(), lr=lr)
 
 # Train - Lightning  ################################################################
