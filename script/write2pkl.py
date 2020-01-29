@@ -1,32 +1,19 @@
 import pickle, os, gc
-from utils.Load_data import get_img, get_weights_dict
-import matplotlib.pyplot as plt
-from utils.Augmentation import ImageTransform
+from utils.Load_data import get_img
 
-# Load Data
-data_dir = '../data/input'
-# ids, imgs, meta = get_img(data_dir)
-# weights_dict = get_weights_dict(meta)
-# print('Data Already')
-#
-# # Write to Pickle
-# with open(os.path.join(data_dir, 'train.pkl'), 'wb') as f:
-#     pickle.dump((ids, imgs), f, protocol=4)
-#
-# del ids, imgs, meta
-# gc.collect()
 
-# Load from Pickle
-with open(os.path.join(data_dir, 'train.pkl'), 'rb') as f:
-    data = pickle.load(f)
+def write2pkl(data_dir, output_dir):
+    # Load Data
+    ids, imgs, meta = get_img(data_dir)
+    print('Data Already')
 
-print(data[0])
-print(data[1][0].shape)
+    # Write to Pickle
+    with open(os.path.join(output_dir, 'train.pkl'), 'wb') as f:
+        pickle.dump((ids, imgs), f, protocol=4)
 
-plt.imshow(data[1][0], cmap='gray')
-plt.show()
+    del ids, imgs, meta
+    gc.collect()
 
-img_ = ImageTransform(64)(data[1][0], 'train')
 
-print(img_)
-print(img_.size())
+if __name__ == '__main__':
+    write2pkl(data_dir='../data/Raw', output_dir='../data/input')

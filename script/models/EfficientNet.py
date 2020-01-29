@@ -2,7 +2,6 @@ from efficientnet_pytorch import EfficientNet
 from torch import nn
 
 
-
 class Mymodel(nn.Module):
     def __init__(self):
         super(Mymodel, self).__init__()
