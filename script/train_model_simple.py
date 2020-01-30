@@ -5,14 +5,13 @@ from models.EfficientNet import Mymodel
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-from efficientnet_pytorch import EfficientNet
 
 
 # Config  ################################################################
 data_dir = '../data/input'
 seed = 0
-test_size = 0.1
-batch_size = 512
+test_size = 0.2
+batch_size = 128
 num_epoch = 10
 img_size = 224
 lr = 1e-3
@@ -25,7 +24,7 @@ seed_everything(seed)
 net = Mymodel()
 
 # FineTuning
-freeze_until(net, 'efn._blocks.28._expand_conv.weight')
+freeze_until(net, 'base._blocks.28._expand_conv.weight')
 
 # Train - Lightning  ################################################################
 output_path = '../lightning'
@@ -41,7 +40,8 @@ trainer = Trainer(
     default_save_path=output_path,
     checkpoint_callback=checkpoint_callback,
     early_stop_callback=earlystopping,
-    # gpus=[0]
+    gpus=[0]
 )
 
-trainer.fit(model)
+if __name__ == '__main__':
+    trainer.fit(model)

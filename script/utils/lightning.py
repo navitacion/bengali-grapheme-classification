@@ -15,6 +15,7 @@ from pytorch_lightning import Trainer
 from .Load_data import get_weights_dict
 from .Dataset import BengariDataset
 from .Augmentation import ImageTransform
+from .Load_data import get_img
 
 
 # データ読み込みや前処理もすべてまとめる
@@ -29,13 +30,15 @@ class LightningSystem(pl.LightningModule):
         self.batch_size = batch_size
 
         # Load Data
-        with open(os.path.join(self.data_dir, 'train.pkl'), 'rb') as f:
-            data = pickle.load(f)
-        ids, imgs = data
-        del data
-        gc.collect()
+        # with open(os.path.join(self.data_dir, 'train.pkl'), 'rb') as f:
+        #     data = pickle.load(f)
+        # ids, imgs = data
+        # del data
+        # gc.collect()
+        #
+        # meta = pd.read_csv(os.path.join(data_dir, 'train.csv'))
 
-        meta = pd.read_csv(os.path.join(data_dir, 'train.csv'))
+        ids, imgs, meta = get_img(data_dir)
 
         # Split Train, Valid Data  ################################################################
         train_ids, train_imgs = ids[int(len(ids) * test_size):], imgs[int(len(ids) * test_size):]
@@ -68,12 +71,12 @@ class LightningSystem(pl.LightningModule):
     @pl.data_loader
     def train_dataloader(self):
         return DataLoader(self.train_dataset, batch_size=self.batch_size,
-                          shuffle=True, num_workers=4, pin_memory=True)
+                          shuffle=True, pin_memory=True)
 
     @pl.data_loader
     def val_dataloader(self):
         return DataLoader(self.val_dataset, batch_size=self.batch_size,
-                          shuffle=False, num_workers=4, pin_memory=True)
+                          shuffle=False, pin_memory=True)
 
     def configure_optimizers(self):
         # Set [optimizer], [schedular]

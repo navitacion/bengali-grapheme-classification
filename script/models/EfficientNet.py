@@ -6,7 +6,7 @@ class Mymodel(nn.Module):
     def __init__(self):
         super(Mymodel, self).__init__()
 
-        self.efn = EfficientNet.from_pretrained('efficientnet-b4', num_classes=256)
+        self.base = EfficientNet.from_pretrained('efficientnet-b4', num_classes=256)
 
         # Grapheme_root_num:  168
         self.fc_g = nn.Linear(in_features=256, out_features=168)
@@ -17,7 +17,7 @@ class Mymodel(nn.Module):
 
     def forward(self, x):
 
-        x = self.efn(x)
+        x = self.base(x)
 
         g = self.fc_g(x)
         v = self.fc_v(x)

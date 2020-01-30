@@ -2,3 +2,4 @@
 lightning/
 data/
 *.pyc
+model/
