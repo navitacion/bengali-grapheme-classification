@@ -11,6 +11,7 @@ import numpy as np
 
 import pytorch_lightning as pl
 from pytorch_lightning import Trainer
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
 from .Load_data import get_weights_dict
 from .Dataset import BengariDataset
@@ -30,15 +31,15 @@ class LightningSystem(pl.LightningModule):
         self.batch_size = batch_size
 
         # Load Data
-        # with open(os.path.join(self.data_dir, 'train.pkl'), 'rb') as f:
-        #     data = pickle.load(f)
-        # ids, imgs = data
-        # del data
-        # gc.collect()
-        #
-        # meta = pd.read_csv(os.path.join(data_dir, 'train.csv'))
+        with open(os.path.join(self.data_dir, 'train.pkl'), 'rb') as f:
+            data = pickle.load(f)
+        ids, imgs = data
+        del data
+        gc.collect()
 
-        ids, imgs, meta = get_img(data_dir)
+        meta = pd.read_csv(os.path.join(data_dir, 'train.csv'))
+
+        # ids, imgs, meta = get_img(data_dir)
 
         # Split Train, Valid Data  ################################################################
         train_ids, train_imgs = ids[int(len(ids) * test_size):], imgs[int(len(ids) * test_size):]
@@ -64,6 +65,7 @@ class LightningSystem(pl.LightningModule):
 
         # Setting Optimizer  ################################################################
         self.optimizer = optim.Adam(net.parameters(), lr=lr)
+        self.schedular = CosineAnnealingLR(self.optimizer, T_max=5, eta_min=0.0001)
 
     def forward(self, x):
         return self.net(x)
@@ -80,7 +82,7 @@ class LightningSystem(pl.LightningModule):
 
     def configure_optimizers(self):
         # Set [optimizer], [schedular]
-        return [self.optimizer], []
+        return [self.optimizer], [self.schedular]
 
     def training_step(self, batch, batch_idx):
         x, target_g, target_v, target_c, _ = batch
