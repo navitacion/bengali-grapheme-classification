@@ -6,7 +6,7 @@ from torch import nn
 from torch import optim
 from torch.utils.data import Dataset, DataLoader
 
-from sklearn.metrics import recall_score
+from sklearn.metrics import recall_score, accuracy_score
 import numpy as np
 
 import pytorch_lightning as pl
@@ -39,6 +39,10 @@ class LightningSystem(pl.LightningModule):
 
         meta = pd.read_csv(os.path.join(data_dir, 'train.csv'))
 
+        # Wrong Train Label
+        wrong_train = ['Train_49823', 'Train_2819', 'Train_20689']
+        meta = meta[~meta['image_id'].isin(wrong_train)]
+
         # ids, imgs, meta = get_img(data_dir)
 
         # Split Train, Valid Data  ################################################################
@@ -65,7 +69,8 @@ class LightningSystem(pl.LightningModule):
 
         # Setting Optimizer  ################################################################
         self.optimizer = optim.Adam(net.parameters(), lr=lr)
-        self.schedular = CosineAnnealingLR(self.optimizer, T_max=5, eta_min=0.0001)
+        # self.schedular = StepLR(self.optimizer, step_size=5, gamma=0.5)
+        self.schedular = CosineAnnealingLR(self.optimizer, T_max=20, eta_min=1e-4)
 
     def forward(self, x):
         return self.net(x)
@@ -87,14 +92,14 @@ class LightningSystem(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, target_g, target_v, target_c, _ = batch
         outputs_g, outputs_v, outputs_c = self.forward(x)
-        # Loss
+        # Loss  ################################################################
         loss_g = self.criterion_g(outputs_g, target_g.long())
         loss_v = self.criterion_v(outputs_v, target_v.long())
         loss_c = self.criterion_c(outputs_c, target_c.long())
 
         loss = loss_g + loss_v + loss_c
 
-        # Recall Score
+        # Recall Score  ################################################################
         scores = []
         pred_g = torch.softmax(outputs_g, dim=1).argmax(dim=1).tolist()
         scores.append(recall_score(target_g.tolist(), pred_g, average='macro'))
@@ -106,21 +111,30 @@ class LightningSystem(pl.LightningModule):
         scores = np.average(scores, weights=[2, 1, 1])
         scores = torch.tensor(scores)
 
-        logs = {'train_loss': loss, 'train_recall': scores}
+        # Accuracy  ################################################################
+        acc = []
+        acc.append(accuracy_score(target_g.tolist(), pred_g))
+        acc.append(accuracy_score(target_v.tolist(), pred_v))
+        acc.append(accuracy_score(target_c.tolist(), pred_c))
+
+        acc = np.average(acc)
+        acc = torch.tensor(acc)
+
+        logs = {'train_loss': loss, 'train_recall': scores, 'train_acc': acc}
 
         return {'loss': loss, 'log': logs, 'progress_bar': logs}
 
     def validation_step(self, batch, batch_idx):
         x, target_g, target_v, target_c, _ = batch
         outputs_g, outputs_v, outputs_c = self.forward(x)
-        # Loss
+        # Loss  ################################################################
         loss_g = self.criterion_g(outputs_g, target_g.long())
         loss_v = self.criterion_v(outputs_v, target_v.long())
         loss_c = self.criterion_c(outputs_c, target_c.long())
 
         loss = loss_g + loss_v + loss_c
 
-        # Recall Score
+        # Recall Score  ################################################################
         scores = []
         pred_g = torch.softmax(outputs_g, dim=1).argmax(dim=1).tolist()
         scores.append(recall_score(target_g.tolist(), pred_g, average='macro'))
@@ -132,12 +146,22 @@ class LightningSystem(pl.LightningModule):
         scores = np.average(scores, weights=[2, 1, 1])
         scores = torch.tensor(scores)
 
-        return {'val_loss': loss, 'val_recall': scores}
+        # Accuracy  ################################################################
+        acc = []
+        acc.append(accuracy_score(target_g.tolist(), pred_g))
+        acc.append(accuracy_score(target_v.tolist(), pred_v))
+        acc.append(accuracy_score(target_c.tolist(), pred_c))
+
+        acc = np.average(acc)
+        acc = torch.tensor(acc)
+
+        return {'val_loss': loss, 'val_recall': scores, 'val_acc': acc}
 
     def validation_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['val_recall'] for x in outputs]).mean()
-        logs = {'val_loss': avg_loss, 'val_recall': avg_recall}
+        avg_acc = torch.stack([x['val_acc'] for x in outputs]).mean()
+        logs = {'val_loss': avg_loss, 'val_recall': avg_recall, 'val_acc': avg_acc}
 
         return {'avg_val_loss': avg_loss, 'avg_val_recall': avg_recall, 'log': logs}
 

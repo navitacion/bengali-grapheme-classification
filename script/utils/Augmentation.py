@@ -140,7 +140,7 @@ class ImageTransform:
                 CropResize(resize),
                 RandomFlip(),
                 RandomRotate(),
-                Gray2RGB(),
+                # Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()
             ]),
@@ -148,7 +148,7 @@ class ImageTransform:
                 Reverse(),
                 MedianFilter(),
                 CropResize(resize),
-                Gray2RGB(),
+                # Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()
             ]),
@@ -156,7 +156,7 @@ class ImageTransform:
                 Reverse(),
                 MedianFilter(),
                 CropResize(resize),
-                Gray2RGB(),
+                # Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()
             ]),
