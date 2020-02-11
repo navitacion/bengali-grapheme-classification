@@ -8,12 +8,14 @@ class Mymodel_resnet(nn.Module):
         super(Mymodel_resnet, self).__init__()
         self.conv0 = nn.Conv2d(in_channels=1, out_channels=3, kernel_size=3, stride=1, padding=1, bias=True)
 
-        self.base = torchvision.models.resnet18(pretrained=False)
+        self.base = torchvision.models.resnet18(pretrained=True)
+        self.dropout = nn.Dropout(0.5)
 
         self.block = nn.Sequential(
-            nn.BatchNorm1d(1000),
-            nn.LeakyReLU(),
             nn.Linear(in_features=1000, out_features=512),
+            nn.BatchNorm1d(512),
+            nn.LeakyReLU(),
+            nn.Linear(in_features=512, out_features=512),
             nn.BatchNorm1d(512),
             nn.LeakyReLU(),
             nn.Linear(in_features=512, out_features=256),
@@ -32,6 +34,7 @@ class Mymodel_resnet(nn.Module):
         x = self.conv0(x)
 
         x = self.base(x)
+        x = self.dropout(x)
         x = self.block(x)
 
         g = self.fc_g(x)

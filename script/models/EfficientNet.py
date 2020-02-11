@@ -32,12 +32,13 @@ class Mymodel_2(nn.Module):
         super(Mymodel_2, self).__init__()
         self.conv0 = nn.Conv2d(in_channels=1, out_channels=3, kernel_size=3, stride=1, padding=1, bias=True)
 
-        self.base = EfficientNet.from_name('efficientnet-b0')
+        self.base = EfficientNet.from_pretrained('efficientnet-b0', num_classes=1000)
 
         self.block = nn.Sequential(
-            nn.BatchNorm1d(1000),
-            nn.LeakyReLU(),
             nn.Linear(in_features=1000, out_features=512),
+            nn.BatchNorm1d(512),
+            nn.LeakyReLU(),
+            nn.Linear(in_features=512, out_features=512),
             nn.BatchNorm1d(512),
             nn.LeakyReLU(),
             nn.Linear(in_features=512, out_features=256),

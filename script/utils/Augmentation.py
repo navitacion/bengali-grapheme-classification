@@ -76,6 +76,36 @@ class Resize:
         return image
 
 
+def get_random_kernel():
+    structure = np.random.choice([cv2.MORPH_RECT, cv2.MORPH_ELLIPSE, cv2.MORPH_CROSS])
+    kernel = cv2.getStructuringElement(structure, tuple(np.random.randint(1, 6, 2)))
+    return kernel
+
+
+class MorphologicalOpening:
+    def __init__(self):
+        pass
+
+    def __call__(self, image):
+        # Opening
+        image = cv2.erode(image, get_random_kernel(), iterations=1)
+        image = cv2.dilate(image, get_random_kernel(), iterations=1)
+
+        return image
+
+
+class MorphologicalClosing:
+    def __init__(self):
+        pass
+
+    def __call__(self, image):
+        # Closing
+        image = cv2.dilate(image, get_random_kernel(), iterations=1)
+        image = cv2.erode(image, get_random_kernel(), iterations=1)
+
+        return image
+
+
 class RandomFlip:
     def __init__(self):
         pass
@@ -111,6 +141,75 @@ class RandomRotate:
         return image
 
 
+# https://www.kumilog.net/entry/numpy-data-augmentation
+class Cutout:
+    def __init__(self, mask_size):
+        self.mask_size = mask_size
+
+    def __call__(self, image):
+        # 最後に使うfill()は元の画像を書き換えるので、コピーしておく
+        _image = np.copy(image)
+        mask_value = _image.mean()
+
+        h, w, _ = _image.shape
+        # マスクをかける場所のtop, leftをランダムに決める
+        # はみ出すことを許すので、0以上ではなく負の値もとる(最大mask_size // 2はみ出す)
+        top = np.random.randint(0 - self.mask_size // 2, h - self.mask_size)
+        left = np.random.randint(0 - self.mask_size // 2, w - self.mask_size)
+        bottom = top + self.mask_size
+        right = left + self.mask_size
+
+        # はみ出した場合の処理
+        if top < 0:
+            top = 0
+        if left < 0:
+            left = 0
+
+        # マスク部分の画素値を平均値で埋める
+        _image[top:bottom, left:right, :].fill(mask_value)
+        return _image
+
+
+class RandomErase:
+    def __init__(self, p=0.5, s=(0.02, 0.4), r=(0.3, 3)):
+        self.p = p
+        self.s = s
+        self.r = r
+
+    def __call__(self, image):
+
+        # マスクするかしないか
+        if np.random.rand() > self.p:
+            return image
+        _image = np.copy(image)
+
+        # マスクする画素値をランダムで決める
+        mask_value = np.random.randint(0, 256)
+
+        h, w = _image.shape
+        # マスクのサイズを元画像のs(0.02~0.4)倍の範囲からランダムに決める
+        mask_area = np.random.randint(h * w * self.s[0], h * w * self.s[1])
+
+        # マスクのアスペクト比をr(0.3~3)の範囲からランダムに決める
+        mask_aspect_ratio = np.random.rand() * self.r[1] + self.r[0]
+
+        # マスクのサイズとアスペクト比からマスクの高さと幅を決める
+        # 算出した高さと幅(のどちらか)が元画像より大きくなることがあるので修正する
+        mask_height = int(np.sqrt(mask_area / mask_aspect_ratio))
+        if mask_height > h - 1:
+            mask_height = h - 1
+        mask_width = int(mask_aspect_ratio * mask_height)
+        if mask_width > w - 1:
+            mask_width = w - 1
+
+        top = np.random.randint(0, h - mask_height)
+        left = np.random.randint(0, w - mask_width)
+        bottom = top + mask_height
+        right = left + mask_width
+        _image[top:bottom, left:right].fill(mask_value)
+        return _image
+
+
 class Gray2RGB:
     def __init__(self):
         pass
@@ -140,6 +239,80 @@ class ImageTransform:
                 CropResize(resize),
                 RandomFlip(),
                 RandomRotate(),
+                # Gray2RGB(),
+                transforms.ToTensor(),
+                PostProcess()
+            ]),
+            'val': transforms.Compose([
+                Reverse(),
+                MedianFilter(),
+                CropResize(resize),
+                # Gray2RGB(),
+                transforms.ToTensor(),
+                PostProcess()
+            ]),
+            'test': transforms.Compose([
+                Reverse(),
+                MedianFilter(),
+                CropResize(resize),
+                # Gray2RGB(),
+                transforms.ToTensor(),
+                PostProcess()
+            ]),
+        }
+
+    def __call__(self, img, phase):
+        return self.data_transform[phase](img)
+
+
+
+class ImageTransform_M:
+    def __init__(self, resize):
+        self.data_transform = {
+            'train': transforms.Compose([
+                Reverse(),
+                MedianFilter(),
+                CropResize(resize),
+                RandomFlip(),
+                RandomRotate(),
+                MorphologicalOpening(),
+                MorphologicalClosing(),
+                # Gray2RGB(),
+                transforms.ToTensor(),
+                PostProcess()
+            ]),
+            'val': transforms.Compose([
+                Reverse(),
+                MedianFilter(),
+                CropResize(resize),
+                # Gray2RGB(),
+                transforms.ToTensor(),
+                PostProcess()
+            ]),
+            'test': transforms.Compose([
+                Reverse(),
+                MedianFilter(),
+                CropResize(resize),
+                # Gray2RGB(),
+                transforms.ToTensor(),
+                PostProcess()
+            ]),
+        }
+
+    def __call__(self, img, phase):
+        return self.data_transform[phase](img)
+
+
+class ImageTransform_random_erase:
+    def __init__(self, resize):
+        self.data_transform = {
+            'train': transforms.Compose([
+                Reverse(),
+                MedianFilter(),
+                CropResize(resize),
+                RandomFlip(),
+                RandomRotate(),
+                RandomErase(),
                 # Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()

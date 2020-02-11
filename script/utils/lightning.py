@@ -15,7 +15,7 @@ from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
 
 from .Load_data import get_weights_dict
 from .Dataset import BengariDataset
-from .Augmentation import ImageTransform
+from .Augmentation import ImageTransform, ImageTransform_M
 from .Load_data import get_img
 
 
@@ -23,11 +23,14 @@ from .Load_data import get_img
 # こちらの方が学習速度が早い
 class LightningSystem(pl.LightningModule):
 
-    def __init__(self, net, data_dir, device, img_size=224, batch_size=128, test_size=0.1, lr=1e-3):
+    def __init__(self, net, data_dir, optimizer, schedular, transform, batch_size=128, test_size=0.1):
+
         super(LightningSystem, self).__init__()
         self.net = net
+        self.optimizer = optimizer
+        self.schedular = schedular
         self.data_dir = data_dir
-        self.img_size = img_size
+        self.transform = transform
         self.batch_size = batch_size
 
         # Load Data
@@ -39,7 +42,7 @@ class LightningSystem(pl.LightningModule):
 
         meta = pd.read_csv(os.path.join(data_dir, 'train.csv'))
 
-        # Wrong Train Label
+        # Remove Wrong Train Label
         wrong_train = ['Train_49823', 'Train_2819', 'Train_20689']
         meta = meta[~meta['image_id'].isin(wrong_train)]
 
@@ -54,23 +57,15 @@ class LightningSystem(pl.LightningModule):
 
         # Dataset  ################################################################
         self.train_dataset = BengariDataset(train_ids, train_imgs, meta,
-                                            ImageTransform(self.img_size), phase='train')
+                                            self.transform, phase='train')
         self.val_dataset = BengariDataset(val_ids, val_imgs, meta,
-                                          ImageTransform(self.img_size), phase='val')
+                                          self.transform, phase='val')
 
         # Criterion  ################################################################
-        weights_dict = get_weights_dict(meta)
+        self.criterion_g = nn.CrossEntropyLoss()
+        self.criterion_v = nn.CrossEntropyLoss()
+        self.criterion_c = nn.CrossEntropyLoss()
 
-        self.criterion_g = nn.CrossEntropyLoss(weight=torch.tensor(weights_dict['g']).to(device))
-        self.criterion_v = nn.CrossEntropyLoss(weight=torch.tensor(weights_dict['v']).to(device))
-        self.criterion_c = nn.CrossEntropyLoss(weight=torch.tensor(weights_dict['c']).to(device))
-
-        # Fine Tuning  ###############################################################
-
-        # Setting Optimizer  ################################################################
-        self.optimizer = optim.Adam(net.parameters(), lr=lr)
-        # self.schedular = StepLR(self.optimizer, step_size=5, gamma=0.5)
-        self.schedular = CosineAnnealingLR(self.optimizer, T_max=20, eta_min=1e-4)
 
     def forward(self, x):
         return self.net(x)
@@ -155,7 +150,9 @@ class LightningSystem(pl.LightningModule):
         acc = np.average(acc)
         acc = torch.tensor(acc)
 
-        return {'val_loss': loss, 'val_recall': scores, 'val_acc': acc}
+        logs = {'train_loss': loss, 'train_recall': scores, 'train_acc': acc}
+
+        return {'val_loss': loss, 'val_recall': scores, 'val_acc': acc, 'progress_bar': logs}
 
     def validation_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
@@ -164,4 +161,3 @@ class LightningSystem(pl.LightningModule):
         logs = {'val_loss': avg_loss, 'val_recall': avg_recall, 'val_acc': avg_acc}
 
         return {'avg_val_loss': avg_loss, 'avg_val_recall': avg_recall, 'log': logs}
-

@@ -1,14 +1,12 @@
-a = [3, 5, 6]
-
-import numpy as np
-import pandas as pd
-import os
+from models.senet import se_resnext50_32x4d
+import torch
+import os, pickle
 
 data_dir = '../data/input'
-meta = pd.read_csv(os.path.join(data_dir, 'train.csv'))
+# Load Data
+with open(os.path.join(data_dir, 'train.pkl'), 'rb') as f:
+    data = pickle.load(f)
+ids, imgs = data
 
-# Wrong Train Label
-print(meta.shape)
-wrong_train = ['Train_49823', 'Train_2819', 'Train_20689']
-meta = meta[~meta['image_id'].isin(wrong_train)]
-print(meta.shape)
+print(imgs[0])
+print(imgs[0].shape)
