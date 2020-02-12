@@ -1,11 +1,11 @@
 import torch
 from torch import nn, optim
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, ReduceLROnPlateau
 from utils.Utils import seed_everything, freeze_until
-from utils.lightning import LightningSystem, LightningSystem_M
+from utils.lightning import LightningSystem
 from models.EfficientNet import Mymodel, Mymodel_2
 from models.Resnet import Mymodel_resnet
-from utils.Augmentation import ImageTransform, ImageTransform_M
+from utils.Augmentation import ImageTransform, ImageTransform_M, ImageTransform_random_erase
 
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
@@ -14,8 +14,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 data_dir = '../data/input'
 seed = 0
 test_size = 0.2
-batch_size = 128
-num_epoch = 100
+batch_size = 64
+num_epoch = 150
 img_size = 112
 lr = 5e-4
 overfit_pct = 0.2
@@ -27,7 +27,7 @@ torch.backends.cudnn.benchmark = True
 seed_everything(seed)
 
 # Transform  ############################################################
-transform = ImageTransform_M(img_size)
+transform = ImageTransform_random_erase(img_size)
 
 # Model  ################################################################
 net = Mymodel_2()
@@ -41,8 +41,9 @@ net = Mymodel_2()
 
 # Optimizer  ################################################################
 optimizer = optim.Adam(net.parameters(), lr=lr)
-schedular = StepLR(optimizer, step_size=20, gamma=0.5)
+# schedular = StepLR(optimizer, step_size=20, gamma=0.5)
 # schedular = CosineAnnealingLR(optimizer, T_max=20, eta_min=1e-4)
+schedular = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, threshold=1e-3, threshold_mode='abs')
 
 # Train - Lightning  ################################################################
 output_path = '../lightning'

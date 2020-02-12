@@ -54,3 +54,13 @@
 # num_epoch = 150
 # img_size = 224
 # lr = 1e-3
+
+
+# Version14
+# Model: Efficientnet-b3
+# Add  ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, threshold=1e-3, threshold_mode='abs')
+# Schedular: StepLR step_size=20, gamma=0.5
+# batch_size = 64
+# num_epoch = 100
+# img_size = 112
+# lr = 5e-4

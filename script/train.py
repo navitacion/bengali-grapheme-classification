@@ -1,6 +1,6 @@
 import torch
 from torch import nn, optim
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
+from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR, ReduceLROnPlateau
 from utils.Utils import seed_everything, freeze_until
 from utils.lightning import LightningSystem
 from models.EfficientNet import Mymodel, Mymodel_2
@@ -43,6 +43,7 @@ net = Mymodel_resnet()
 optimizer = optim.Adam(net.parameters(), lr=lr)
 schedular = StepLR(optimizer, step_size=20, gamma=0.5)
 # schedular = CosineAnnealingLR(optimizer, T_max=20, eta_min=1e-4)
+# schedular = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, threshold=1e-3, threshold_mode='abs')
 
 # Train - Lightning  ################################################################
 output_path = '../lightning'
