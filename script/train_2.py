@@ -5,6 +5,7 @@ from utils.Utils import seed_everything, freeze_until
 from utils.lightning import LightningSystem
 from models.EfficientNet import Mymodel, Mymodel_2
 from models.Resnet import Mymodel_resnet
+from models.seresnext import PretrainedCNN
 from utils.Augmentation import ImageTransform, ImageTransform_M, ImageTransform_random_erase
 
 from pytorch_lightning import Trainer
@@ -14,10 +15,10 @@ from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 data_dir = '../data/input'
 seed = 0
 test_size = 0.2
-batch_size = 64
-num_epoch = 150
-img_size = 112
-lr = 5e-4
+batch_size = 256
+num_epoch = 200
+img_size = 64
+lr = 1e-3
 overfit_pct = 0.2
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 torch.cuda.empty_cache()
@@ -27,10 +28,10 @@ torch.backends.cudnn.benchmark = True
 seed_everything(seed)
 
 # Transform  ############################################################
-transform = ImageTransform_random_erase(img_size)
+transform = ImageTransform(img_size)
 
 # Model  ################################################################
-net = Mymodel_2()
+net = PretrainedCNN(model_name='se_resnext50_32x4d')
 
 # Sanity Check
 # for name, param in net.named_parameters():
@@ -41,9 +42,9 @@ net = Mymodel_2()
 
 # Optimizer  ################################################################
 optimizer = optim.Adam(net.parameters(), lr=lr)
-# schedular = StepLR(optimizer, step_size=20, gamma=0.5)
+schedular = StepLR(optimizer, step_size=20, gamma=0.5)
 # schedular = CosineAnnealingLR(optimizer, T_max=20, eta_min=1e-4)
-schedular = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, threshold=1e-3, threshold_mode='abs')
+# schedular = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5, threshold=1e-3, threshold_mode='abs')
 
 # Train - Lightning  ################################################################
 output_path = '../lightning'

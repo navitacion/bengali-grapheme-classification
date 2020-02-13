@@ -23,6 +23,7 @@ pytorch-lightning = "*"
 tensorboard = "*"
 torchsummary = "*"
 efficientnet-pytorch = "*"
+pretrainedmodels = "*"
 
 [requires]
 python_version = "3.7"

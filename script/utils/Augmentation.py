@@ -141,35 +141,22 @@ class RandomRotate:
         return image
 
 
-# https://www.kumilog.net/entry/numpy-data-augmentation
-class Cutout:
-    def __init__(self, mask_size):
-        self.mask_size = mask_size
+class Rotate:
+    def __init__(self):
+        pass
 
     def __call__(self, image):
-        # 最後に使うfill()は元の画像を書き換えるので、コピーしておく
-        _image = np.copy(image)
-        mask_value = _image.mean()
+        angle = random.choice(np.arange(0, 90, 10).tolist())
+        h, w = image.shape
+        center = (int(w / 2), int(h / 2))
+        trans = cv2.getRotationMatrix2D(center, angle, 1.0)
 
-        h, w, _ = _image.shape
-        # マスクをかける場所のtop, leftをランダムに決める
-        # はみ出すことを許すので、0以上ではなく負の値もとる(最大mask_size // 2はみ出す)
-        top = np.random.randint(0 - self.mask_size // 2, h - self.mask_size)
-        left = np.random.randint(0 - self.mask_size // 2, w - self.mask_size)
-        bottom = top + self.mask_size
-        right = left + self.mask_size
+        image = cv2.warpAffine(image, trans, (w, h))
 
-        # はみ出した場合の処理
-        if top < 0:
-            top = 0
-        if left < 0:
-            left = 0
-
-        # マスク部分の画素値を平均値で埋める
-        _image[top:bottom, left:right, :].fill(mask_value)
-        return _image
+        return image
 
 
+# https://www.kumilog.net/entry/numpy-data-augmentation
 class RandomErase:
     def __init__(self, p=0.5, s=(0.02, 0.4), r=(0.3, 3)):
         self.p = p
@@ -238,7 +225,9 @@ class ImageTransform:
                 MedianFilter(),
                 CropResize(resize),
                 RandomFlip(),
+                Rotate(),
                 RandomRotate(),
+                RandomErase(),
                 # Gray2RGB(),
                 transforms.ToTensor(),
                 PostProcess()

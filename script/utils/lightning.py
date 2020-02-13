@@ -3,20 +3,13 @@ import pandas as pd
 
 import torch
 from torch import nn
-from torch import optim
 from torch.utils.data import Dataset, DataLoader
 
 from sklearn.metrics import recall_score, accuracy_score
 import numpy as np
 
 import pytorch_lightning as pl
-from pytorch_lightning import Trainer
-from torch.optim.lr_scheduler import StepLR, CosineAnnealingLR
-
-from .Load_data import get_weights_dict
 from .Dataset import BengariDataset
-from .Augmentation import ImageTransform, ImageTransform_M
-from .Load_data import get_img
 
 
 # データ読み込みや前処理もすべてまとめる
@@ -24,7 +17,6 @@ from .Load_data import get_img
 class LightningSystem(pl.LightningModule):
 
     def __init__(self, net, data_dir, optimizer, schedular, transform, batch_size=128, test_size=0.1):
-
         super(LightningSystem, self).__init__()
         self.net = net
         self.optimizer = optimizer
@@ -65,7 +57,6 @@ class LightningSystem(pl.LightningModule):
         self.criterion_g = nn.CrossEntropyLoss()
         self.criterion_v = nn.CrossEntropyLoss()
         self.criterion_c = nn.CrossEntropyLoss()
-
 
     def forward(self, x):
         return self.net(x)
@@ -115,7 +106,7 @@ class LightningSystem(pl.LightningModule):
         acc = np.average(acc)
         acc = torch.tensor(acc)
 
-        logs = {'train_loss': loss, 'train_recall': scores, 'train_acc': acc}
+        logs = {'train/loss': loss, 'train/recall': scores, 'train/acc': acc}
 
         return {'loss': loss, 'log': logs, 'progress_bar': logs}
 
@@ -150,14 +141,12 @@ class LightningSystem(pl.LightningModule):
         acc = np.average(acc)
         acc = torch.tensor(acc)
 
-        logs = {'train_loss': loss, 'train_recall': scores, 'train_acc': acc}
-
-        return {'val_loss': loss, 'val_recall': scores, 'val_acc': acc, 'progress_bar': logs}
+        return {'val_loss': loss, 'val_recall': scores, 'val_acc': acc}
 
     def validation_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['val_recall'] for x in outputs]).mean()
         avg_acc = torch.stack([x['val_acc'] for x in outputs]).mean()
-        logs = {'val_loss': avg_loss, 'val_recall': avg_recall, 'val_acc': avg_acc}
+        logs = {'val/loss': avg_loss, 'val/recall': avg_recall, 'val/acc': avg_acc}
 
         return {'avg_val_loss': avg_loss, 'avg_val_recall': avg_recall, 'log': logs}

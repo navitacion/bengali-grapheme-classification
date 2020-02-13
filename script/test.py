@@ -1,12 +1,37 @@
-from models.senet import se_resnext50_32x4d
-import torch
-import os, pickle
 
-data_dir = '../data/input'
-# Load Data
-with open(os.path.join(data_dir, 'train.pkl'), 'rb') as f:
-    data = pickle.load(f)
-ids, imgs = data
+import os, pickle, random
+import numpy as np
 
-print(imgs[0])
-print(imgs[0].shape)
+import torch as th
+
+
+class NLL_OHEM(th.nn.NLLLoss):
+    """ Online hard example mining.
+    Needs input from nn.LogSotmax() """
+
+    def __init__(self, ratio):
+        super(NLL_OHEM, self).__init__(None, True)
+        self.ratio = ratio
+
+    def forward(self, x, y, ratio=None):
+        if ratio is not None:
+            self.ratio = ratio
+        num_inst = x.size(0)
+        num_hns = int(self.ratio * num_inst)
+        x_ = x.clone()
+        inst_losses = th.autograd.Variable(th.zeros(num_inst))
+        for idx, label in enumerate(y.data):
+            inst_losses[idx] = -x_.data[idx, label.long]
+            # loss_incs = -x_.sum(1)
+        _, idxs = inst_losses.topk(num_hns)
+        x_hn = x.index_select(0, idxs)
+        y_hn = y.index_select(0, idxs)
+        return th.nn.functional.nll_loss(x_hn, y_hn)
+
+z = th.randn(3, 10)
+w = th.randn(3, 10)
+
+loss = NLL_OHEM(ratio=1.0)
+
+out = loss(z, w)
+print(out)

@@ -64,3 +64,4 @@ class Mymodel_2(nn.Module):
         c = self.fc_c(x)
 
         return g, v, c
+
